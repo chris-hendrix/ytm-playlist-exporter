@@ -1,0 +1,4 @@
+settings.yaml
+*.csv
+headers_auth.json
+__pycache__/
