@@ -20,7 +20,7 @@ class YtmExporter:
 
     def get_song_files(self):
         song_files = []
-        files = get_files(self.settings['libraryPath'])
+        files = get_files(self.settings['libraryDirectory'])
         for file in files:
             filename = Path(file).stem
             song_files.append({'file': file, 'filename': filename})
@@ -29,7 +29,7 @@ class YtmExporter:
     def get_playlist_songs(self):
         playlist_songs = []
         playlists = self.ytmusic.get_library_playlists()
-        for playlist in playlists:
+        for playlist in playlists[0:2]:
             playlist_id = playlist['playlistId']
             playlist_name = playlist['title']
             playlist_details = self.ytmusic.get_playlist(playlist_id)
@@ -84,8 +84,25 @@ class YtmExporter:
         playlist_song_files = pd.merge(playlist_song_files, song_files, left_on='filename_file', right_on='filename')
         return playlist_song_files[[*cols, 'file']]
 
+    def export_playlists(self):
+        def _replace(value):
+            replacers = self.settings['fileReplacers']
+            for f, r in replacers:
+                value = value.replace(f, r)
+            return value
+
+        export_dir = self.settings['exportDirectory']
+        playlist_song_files = self.get_playlist_song_files()
+        playlist_song_files['filestr'] = playlist_song_files['file'].apply(lambda x: _replace(x))
+        playlists = playlist_song_files['playlist'].unique()
+        for playlist in playlists:
+            filtered = list(playlist_song_files[playlist_song_files['playlist'] == playlist]['filestr'])
+            export_path = os.path.join(export_dir, playlist + '.m3u')
+            textfile = open(export_path, 'w')
+            [textfile.write(f + '\n') for f in filtered]
+
 
 if __name__ == "__main__":
     ytm = YtmExporter()
-    playlist_song_files = ytm.get_playlist_song_files()
-    print(playlist_song_files.head())
+    # playlist_song_files = ytm.get_playlist_song_files()
+    ytm.export_playlists()
