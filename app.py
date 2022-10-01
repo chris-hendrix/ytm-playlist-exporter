@@ -3,7 +3,7 @@ import json
 import glob
 from pathlib import Path
 import pandas as pd
-import difflib
+from rapidfuzz import process
 from ytmusicapi import YTMusic
 
 
@@ -29,15 +29,15 @@ class YtmExporter:
     def get_playlist_songs(self):
         playlist_songs = []
         playlists = self.ytmusic.get_library_playlists()
-        for playlist in playlists[0:1]:
+        for playlist in playlists:
             playlist_id = playlist['playlistId']
             playlist_name = playlist['title']
             playlist_details = self.ytmusic.get_playlist(playlist_id)
             for track in playlist_details['tracks']:
-                artist = track['artists'][0]['name']
+                artist = track['artists'][0]['name'] if len(track['artists']) > 0 else None
                 title = track['title']
-                album = track['album']['name']
-                filename = ' - '.join([artist, title, album])
+                album = track['album']['name'] if track['album'] else None
+                filename = ' - '.join([artist or '', title or '', album or ''])
                 playlist_songs.append({
                     'playlist': playlist_name,
                     'artist': artist,
@@ -47,16 +47,41 @@ class YtmExporter:
                 })
         return pd.DataFrame.from_dict(playlist_songs)
 
-    def get_playlist_song_files(self):
-        def _get_close_match(text, column):
-            matches = difflib.get_close_matches(text, column)
-            return matches[0] if len(matches) > 0 else None
-
+    def get_playlist_song_files(self, score_cutoff=90):
         song_files = self.get_song_files()
         playlist_songs = self.get_playlist_songs()
-        playlist_songs_col = pd.DataFrame(playlist_songs.groupby(['filename']), columns=['filename', 'agg'])['filename']
-        song_files['filename_match'] = song_files['filename'].map(lambda x: _get_close_match(x, playlist_songs_col))
-        return playlist_songs
+
+        files = sorted(list(song_files['filename'].unique()))
+        songs = sorted(list(playlist_songs['filename'].unique()))
+
+        print(f'{len(files)} files and {len(songs)} unique songs')
+
+        # first pass for exact matches
+        exact_matches, exact_misses = [], []
+        for song in songs:
+            if song in files:
+                exact_matches.append({'filename_song': song, 'filename_file': song})
+                files.pop(files.index(song))
+            else:
+                exact_misses.append(song)
+        print(f'{len(exact_matches)} exact matches with {len(exact_misses)} misses.')
+
+        # second pass for fuzzy matches
+        fuzzy_matches, fuzzy_misses = [], []
+        for song in exact_misses:
+            match = process.extractOne(song, files, score_cutoff=score_cutoff)
+            if match:
+                file = match[0]
+                fuzzy_matches.append({'filename_song': song, 'filename_file': file})
+            else:
+                fuzzy_misses.append(song)
+        print(f'{len(fuzzy_matches)} fuzzy matches with {len(fuzzy_misses)} misses.')
+
+        matches = pd.DataFrame.from_dict(exact_matches + fuzzy_matches)
+        cols = playlist_songs.columns.difference(song_files.columns)
+        playlist_song_files = pd.merge(playlist_songs, matches, left_on='filename', right_on='filename_song')
+        playlist_song_files = pd.merge(playlist_song_files, song_files, left_on='filename_file', right_on='filename')
+        return playlist_song_files[[*cols, 'file']]
 
 
 if __name__ == "__main__":
