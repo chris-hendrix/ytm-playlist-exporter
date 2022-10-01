@@ -1,4 +1,4 @@
-settings.yaml
+settings.json
 *.csv
 headers_auth.json
 __pycache__/

@@ -14,3 +14,4 @@ pip install --upgrade pip
 pip install flake8
 pip install -e .
 pip install ytmusicapi
+pip install pandas
