@@ -73,6 +73,7 @@ class YtmExporter:
             if match:
                 file = match[0]
                 fuzzy_matches.append({'filename_song': song, 'filename_file': file})
+                files.pop(files.index(file))
             else:
                 fuzzy_misses.append(song)
         print(f'{len(fuzzy_matches)} fuzzy matches with {len(fuzzy_misses)} misses.')
