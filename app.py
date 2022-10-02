@@ -29,10 +29,10 @@ class YtmExporter:
     def get_playlist_songs(self):
         playlist_songs = []
         playlists = self.ytmusic.get_library_playlists()
-        for playlist in playlists[0:2]:
+        for playlist in playlists:
             playlist_id = playlist['playlistId']
             playlist_name = playlist['title']
-            playlist_details = self.ytmusic.get_playlist(playlist_id)
+            playlist_details = self.ytmusic.get_playlist(playlist_id, limit=500)
             for track in playlist_details['tracks']:
                 artist = track['artists'][0]['name'] if len(track['artists']) > 0 else None
                 title = track['title']
@@ -99,6 +99,7 @@ class YtmExporter:
             filtered = list(playlist_song_files[playlist_song_files['playlist'] == playlist]['filestr'])
             export_path = os.path.join(export_dir, playlist + '.m3u')
             textfile = open(export_path, 'w')
+            print(f'writing {playlist} ({len(filtered)} songs) to {export_path}')
             [textfile.write(f + '\n') for f in filtered]
 
 
