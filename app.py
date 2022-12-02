@@ -14,8 +14,11 @@ def get_files(dir, latest=False):
 
 
 class YtmExporter:
+
     def __init__(self):
         self.settings = json.load(open('settings.json'))
+        headers_raw = Path('headers_raw.txt').read_text()
+        YTMusic.setup('headers_auth.json', headers_raw=headers_raw)
         self.ytmusic = YTMusic('headers_auth.json', self.settings['id'])
 
     def get_song_files(self):
