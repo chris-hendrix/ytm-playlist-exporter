@@ -1,5 +1,6 @@
 settings.json
 *.csv
 headers_auth.json
-headers_raw.txt
+headers_raw**.txt
 __pycache__/
+.vscode/
