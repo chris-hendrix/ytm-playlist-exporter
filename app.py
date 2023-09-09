@@ -5,6 +5,7 @@ from pathlib import Path
 import pandas as pd
 from rapidfuzz import process
 from ytmusicapi import YTMusic
+import logging
 
 
 def get_files(dir, latest=False):
@@ -17,9 +18,7 @@ class YtmExporter:
 
     def __init__(self):
         self.settings = json.load(open('settings.json'))
-        # headers_raw = Path('headers_raw.txt').read_text()
-        # YTMusic.setup('headers_auth.json', headers_raw=headers_raw)
-        self.ytmusic = YTMusic('headers_auth.json', self.settings['id'])
+        self.ytmusic = YTMusic('oauth.json')
 
     def get_song_files(self):
         song_files = []
@@ -57,7 +56,7 @@ class YtmExporter:
         files = sorted(list(song_files['filename'].unique()))
         songs = sorted(list(playlist_songs['filename'].unique()))
 
-        print(f'{len(files)} files and {len(songs)} unique songs')
+        logging.info(f'{len(files)} files and {len(songs)} unique songs')
 
         # first pass for exact matches
         exact_matches, exact_misses = [], []
@@ -67,7 +66,7 @@ class YtmExporter:
                 files.pop(files.index(song))
             else:
                 exact_misses.append(song)
-        print(f'{len(exact_matches)} exact matches with {len(exact_misses)} misses.')
+        logging.info(f'{len(exact_matches)} exact matches with {len(exact_misses)} misses.')
 
         # second pass for fuzzy matches
         fuzzy_matches, fuzzy_misses = [], []
@@ -79,7 +78,7 @@ class YtmExporter:
                 files.pop(files.index(file))
             else:
                 fuzzy_misses.append(song)
-        print(f'{len(fuzzy_matches)} fuzzy matches with {len(fuzzy_misses)} misses.')
+        logging.info(f'{len(fuzzy_matches)} fuzzy matches with {len(fuzzy_misses)} misses.')
 
         matches = pd.DataFrame.from_dict(exact_matches + fuzzy_matches)
         cols = playlist_songs.columns.difference(song_files.columns)
@@ -102,7 +101,7 @@ class YtmExporter:
             filtered = list(playlist_song_files[playlist_song_files['playlist'] == playlist]['filestr'])
             export_path = os.path.join(export_dir, playlist + '.m3u')
             textfile = open(export_path, 'w')
-            print(f'writing {playlist} ({len(filtered)} songs) to {export_path}')
+            logging.info(f'writing {playlist} ({len(filtered)} songs) to {export_path}')
             [textfile.write(f + '\n') for f in filtered]
 
 
