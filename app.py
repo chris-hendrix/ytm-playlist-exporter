@@ -7,6 +7,8 @@ from rapidfuzz import process
 from ytmusicapi import YTMusic
 import logging
 
+logging.basicConfig(level=logging.INFO)
+
 
 def get_files(dir, latest=False):
     files = glob.glob(dir + '/*', recursive=True)
