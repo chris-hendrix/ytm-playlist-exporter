@@ -32,7 +32,7 @@ class YtmExporter:
 
     def get_playlist_songs(self):
         playlist_songs = []
-        playlists = self.ytmusic.get_library_playlists()
+        playlists = self.ytmusic.get_library_playlists(limit=None)
         for playlist in playlists:
             playlist_id = playlist['playlistId']
             playlist_name = playlist['title']
