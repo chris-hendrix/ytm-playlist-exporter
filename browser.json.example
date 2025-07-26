@@ -1,0 +1,13 @@
+{
+    "context": {
+        "client": {
+            "clientName": "WEB_REMIX",
+            "clientVersion": "1.20250716.03.00"
+        }
+    },
+    "header": {
+        "Cookie": "YOUR_YOUTUBE_MUSIC_COOKIES_HERE",
+        "X-Goog-AuthUser": "0",
+        "x-origin": "https://music.youtube.com"
+    }
+}

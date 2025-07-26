@@ -1,0 +1,8 @@
+{
+  "libraryDirectory": "/path/to/your/music/library",
+  "exportDirectory": "/path/to/export/playlists",
+  "fileReplacers": [
+    ["/path/to/music/library/", "C:\\Music\\"],
+    ["/", "\\"]
+  ]
+}

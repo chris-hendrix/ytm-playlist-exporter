@@ -20,7 +20,7 @@ class YtmExporter:
 
     def __init__(self):
         self.settings = json.load(open('settings.json'))
-        self.ytmusic = YTMusic('oauth.json')
+        self.ytmusic = YTMusic('browser.json')
 
     def get_song_files(self):
         song_files = []
@@ -36,19 +36,36 @@ class YtmExporter:
         for playlist in playlists:
             playlist_id = playlist['playlistId']
             playlist_name = playlist['title']
-            playlist_details = self.ytmusic.get_playlist(playlist_id, limit=500)
-            for track in playlist_details['tracks']:
-                artist = track['artists'][0]['name'] if len(track['artists']) > 0 else None
-                title = track['title']
-                album = track['album']['name'] if track['album'] else None
-                filename = ' - '.join([artist or '', title or '', album or ''])
-                playlist_songs.append({
-                    'playlist': playlist_name,
-                    'artist': artist,
-                    'title': title,
-                    'album': album,
-                    'filename': filename
-                })
+            try:
+                logging.info(f'Processing playlist: {playlist_name}')
+                playlist_details = self.ytmusic.get_playlist(playlist_id, limit=500)
+                
+                # Check if playlist has tracks
+                if 'tracks' not in playlist_details or not playlist_details['tracks']:
+                    logging.warning(f'Playlist "{playlist_name}" has no tracks or unsupported content, skipping')
+                    continue
+                    
+                for track in playlist_details['tracks']:
+                    # Skip non-music content (podcasts, etc.)
+                    if not track or 'artists' not in track:
+                        continue
+                        
+                    artist = track['artists'][0]['name'] if len(track['artists']) > 0 else None
+                    title = track['title']
+                    album = track['album']['name'] if track['album'] else None
+                    filename = ' - '.join([artist or '', title or '', album or ''])
+                    playlist_songs.append({
+                        'playlist': playlist_name,
+                        'artist': artist,
+                        'title': title,
+                        'album': album,
+                        'filename': filename
+                    })
+            except Exception as e:
+                logging.error(f'Error processing playlist "{playlist_name}": {e}')
+                logging.info(f'Skipping playlist "{playlist_name}" due to error')
+                continue
+                
         return pd.DataFrame.from_dict(playlist_songs)
 
     def get_playlist_song_files(self, score_cutoff=90):
